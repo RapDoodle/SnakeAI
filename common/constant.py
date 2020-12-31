@@ -1,0 +1,10 @@
+# Types of layer
+INPUT_LAYER = 0
+HIDDEN_LAYER = 1
+OUTPUT_LAYER = 2
+SINGLE_LAYER = 3
+
+# Types of signal for Gomoku
+PLACE_ERROR = 0
+PLACE_SUCCESS = 1
+PLACE_WIN = 2
