@@ -1,0 +1,163 @@
+import numpy as np
+import common.constant as const
+
+from nn.math import linear, sigmoid, relu, softmax, tanh
+from common.exception import ModelError, NotImplementedError
+
+class Input():
+
+    def __init__(self, units):
+        self.units = units
+        self.type = const.INPUT_LAYER
+        self.next_layer = None
+        self.use_bias = False # Just an act for consistency
+        self.W = None
+        self.b = None
+
+    def init(self, next_layer):
+        self.next_layer = next_layer
+
+    def forward(self, X):
+        self.A = X
+        return self.next_layer.forward(X)
+
+    def backward(self, m):
+        return
+
+    def update_weights(self, learning_rate = 0.01, optimizer = None):
+        return
+
+
+class Dense():
+
+    def __init__(self, units, activation, use_bias = True, kernel_initializer = 'uniform'):
+        # Verify the activation function
+        if activation not in ['linear', 'sigmoid', 'relu', 'softmax', 'tanh']:
+            raise ModelError('invalid activation function')
+        
+        if use_bias:
+            # The bias matrix of size (n, 1)
+            self.b = np.zeros((units, 1))
+
+        self.units = units
+        self.use_bias = use_bias
+        self.activation = activation
+        self.prev_layer = None
+        self.next_layer = None
+        self.kernel_initializer = kernel_initializer
+        self.W = None
+        self.type = None
+
+    def load_weights(self, W, b):
+        if W.shape != self.W.shape or b.shape != self.b.shape:
+            raise ModelError('size of weights do not match')
+        self.W = W
+        self.b = b
+
+    def init(self, prev_layer, next_layer = None):
+        if prev_layer is None:
+            raise ModelError('the hidden/output layer must have a previous layer')
+
+        # The number of units in the next layer (if any)
+        prev_dims = prev_layer.units
+
+        self.next_layer = next_layer
+        self.prev_layer = prev_layer
+        
+        # self.W = np.zeros((self.units, prev_dims))
+        
+        if self.kernel_initializer == 'uniform':
+            self.W = np.random.uniform(-1, 1, (self.units, prev_dims))
+            self.b = np.random.uniform(-1, 1, (self.units, 1))
+
+        elif self.kernel_initializer == 'he':
+            self.W = np.random.randn(self.units, prev_dims) * np.sqrt(2 / prev_dims)
+            self.b = np.zeros((self.units, 1))
+
+        elif self.kernel_initializer == 'random':
+            self.W = np.random.randn(self.units, prev_dims) / np.sqrt(prev_dims)
+            self.b = np.zeros((self.units, 1))
+
+        else:
+            raise ModelError('unidentified kernel initializer')
+
+    def set_next_layer(self, next_layer):
+        self.next_layer = next_layer
+
+    def forward(self, X):
+        """Forward propagation
+        
+        Parameter:
+        X: A numpy array of size (n, m)
+            n: the number features (excluding the bias term)"""
+        self.Z = np.dot(self.W, X)
+        if self.use_bias:
+            self.Z = self.Z + self.b
+
+        if self.activation == 'sigmoid':
+            self.A = sigmoid(self.Z)
+        elif self.activation == 'relu':
+            self.A = relu(self.Z)
+        elif self.activation == 'softmax':
+            self.A = softmax(self.Z)
+        elif self.activation == 'tanh':
+            self.A = tanh(self.Z)
+        else:
+            self.A = linear(self.Z)
+
+        if self.next_layer is not None:
+            return self.next_layer.forward(self.Z)
+        return self.A
+
+    def backward(self, m, lambd = 0.1):
+        self.dA = np.dot(self.next_layer.W.T, self.next_layer.dZ)
+        
+        if self.activation == 'relu':
+            self.dZ = np.multiply(self.dA, np.int64(self.A > 0))
+
+        elif self.activation == 'sigmoid':
+            s = sigmoid(self.Z)
+            self.dZ = self.dA * s * (1 - s)
+
+        elif self.activation == 'linear':
+            self.dZ = self.dA
+
+        elif self.activation == 'tanh':
+            self.dZ = np.dot(self.next_layer.W.T, self.next_layer.dZ) * (1 - np.power(self.A, 2))
+
+        self.dW = (1/m) * np.dot(self.dZ, self.prev_layer.A.T) + (lambd / m) * self.W
+        self.db = (1/m) * np.sum(self.dZ, axis = 1, keepdims = True)
+
+        self.prev_layer.backward(m)
+
+    def update_weights(self, learning_rate = 0.01, optimizer = None):
+        self.W -= learning_rate * self.dW
+        self.b -= learning_rate * self.db
+        # print(self.units)
+        # if self.units == 256:
+        #     print('W', self.W[0][0])
+        #     print('b', self.b[0])
+        self.prev_layer.update_weights(learning_rate = learning_rate)
+
+
+class Output(Dense):
+
+    def __init__(self, units, activation, use_bias = True):
+        super().__init__(units, activation, use_bias = True)
+
+    def backward(self, Y_train):
+        """Entrance to back propagation
+        
+        Parameters:
+        Y_pred: the predicted value generated by the forward propagation
+        Y_train: the actual value (the y_train)"""
+        m = Y_train.shape[0]
+
+        if self.activation == 'sigmoid' or self.activation == 'softmax':
+            self.dZ = self.A - Y_train
+            self.dW = (1/m) * np.dot(self.dZ, self.prev_layer.A.T)
+            self.db = (1/m) * np.sum(self.dZ, axis = 1, keepdims = True)
+        else:
+            raise NotImplementedError()
+
+        self.prev_layer.backward(m)
