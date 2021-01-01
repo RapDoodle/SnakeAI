@@ -3,29 +3,9 @@ import numpy as np
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
+from settings import settings
 
-NUM_ROWS = 15
-NUM_COLS = 15
-
-GRID_SIZE = 30
-GRID_MARGIN = 2
-BODY_MARGIN = 15
-BODY_BORDER_WIDTH = 2
-
-LEFT = (0, -1)
-RIGHT = (0, 1)
-UP = (-1, 0)
-DOWN = (1, 0)
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-
-MOVE = 0
-RAND_FOOD = 1
-EAT = 2
-SPAWN = 3
-END = 4
+import common.constant as const
 
 class SnakeGameGUI():
 
@@ -35,9 +15,9 @@ class SnakeGameGUI():
         self.game = game
 
         # Color scheme
-        self.background_color = BLACK
+        self.background_color = const.BLACK
 
-        self.window_width = NUM_COLS * GRID_SIZE + (NUM_COLS - 1) * GRID_MARGIN + BODY_MARGIN * 2 + BODY_BORDER_WIDTH * 2
+        self.window_width = settings['NUM_COLS'] * settings['GRID_SIZE'] + (settings['NUM_COLS'] - 1) * settings['GRID_MARGIN'] + settings['BODY_MARGIN'] * 2 + settings['BODY_BORDER_WIDTH'] * 2
         self.window_height = self.window_width
 
         # Initialize PyGame
@@ -57,16 +37,16 @@ class SnakeGameGUI():
         y2 = self.window_height
         pygame.draw.rect(self.screen, self.background_color,[x1 , y1, x2, y2], 0)
 
-        x1 = BODY_MARGIN - BODY_BORDER_WIDTH
+        x1 = settings['BODY_MARGIN'] - settings['BODY_BORDER_WIDTH']
         y1 = x1
-        x2 = self.window_width - 2*(BODY_MARGIN - BODY_BORDER_WIDTH)
+        x2 = self.window_width - 2*(settings['BODY_MARGIN'] - settings['BODY_BORDER_WIDTH'])
         y2 = x2
-        pygame.draw.rect(self.screen, WHITE, [x1, y1, x2, y2], BODY_BORDER_WIDTH)
+        pygame.draw.rect(self.screen, const.WHITE, [x1, y1, x2, y2], settings['BODY_BORDER_WIDTH'])
 
     def draw_block(self, r, c, color):
-        x1 = BODY_MARGIN + c*GRID_SIZE + (c+1)*GRID_MARGIN
-        y1 = BODY_MARGIN + r*GRID_SIZE + (r+1)*GRID_MARGIN
-        pygame.draw.rect(self.screen, color, pygame.Rect([x1, y1, GRID_SIZE, GRID_SIZE]))
+        x1 = settings['BODY_MARGIN'] + c*settings['GRID_SIZE'] + (c+1)*settings['GRID_MARGIN']
+        y1 = settings['BODY_MARGIN'] + r*settings['GRID_SIZE'] + (r+1)*settings['GRID_MARGIN']
+        pygame.draw.rect(self.screen, color, pygame.Rect([x1, y1, settings['GRID_SIZE'], settings['GRID_SIZE']]))
 
     def load(self):
         root = tk.Tk()
@@ -98,25 +78,25 @@ class SnakeGameGUI():
         for _, row in log.iterrows():
             self.paint_board()
             
-            if row['type'] == MOVE or row['type'] == EAT:
+            if row['type'] == const.MOVE or row['type'] == const.EAT:
                 self.game.turn((row['pos_dr'], row['pos_dc']))
                 self.game.move(replay_mode = True)
                 pygame.time.wait(10)
                 
-            elif row['type'] == RAND_FOOD:
+            elif row['type'] == const.RAND_FOOD:
                 self.game.set_food(row['pos_r'], row['pos_c'])
 
-            elif row['type'] == SPAWN:
+            elif row['type'] == const.SPAWN:
                 pass
 
-            elif row['type'] == END:
+            elif row['type'] == const.END:
                 self.game.end = True
                 break
             for pos in self.game.foods:
-                self.draw_block(pos[0], pos[1], RED)
+                self.draw_block(pos[0], pos[1], const.RED)
                 
             for pos in self.game.positions:
-                self.draw_block(pos[0], pos[1], WHITE)
+                self.draw_block(pos[0], pos[1], const.WHITE)
 
             pygame.display.update()
             pygame.event.pump()
@@ -131,9 +111,9 @@ class SnakeGameGUI():
             pygame.event.pump()
             self.paint_board()
             for pos in self.game.foods:
-                self.draw_block(pos[0], pos[1], RED)
+                self.draw_block(pos[0], pos[1], const.RED)
             for pos in self.game.positions:
-                self.draw_block(pos[0], pos[1], WHITE)
+                self.draw_block(pos[0], pos[1], const.WHITE)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -141,13 +121,13 @@ class SnakeGameGUI():
                 elif event.type == pygame.KEYDOWN:
                     if self.game is not None:
                         if event.key == pygame.K_UP:
-                            self.game.turn(UP)
+                            self.game.turn(const.UP)
                         elif event.key == pygame.K_DOWN:
-                            self.game.turn(DOWN)
+                            self.game.turn(const.DOWN)
                         elif event.key == pygame.K_LEFT:
-                            self.game.turn(LEFT)
+                            self.game.turn(const.LEFT)
                         elif event.key == pygame.K_RIGHT:
-                            self.game.turn(RIGHT)
+                            self.game.turn(const.RIGHT)
                         elif event.key == pygame.K_r:
                             self.game.game_init()
                         elif event.key == pygame.K_s:

@@ -4,24 +4,8 @@ import random
 import math
 import os
 
-# Grid sizes
-num_rows = 15
-num_cols = 15
-
-# Directions
-LEFT = (0, -1)
-RIGHT = (0, 1)
-UP = (-1, 0)
-DOWN = (1, 0)
-DIRECTIONS = [LEFT, RIGHT, UP, DOWN]
-
-MOVE = 0
-RAND_FOOD = 1
-EAT = 2
-SPAWN = 3
-END = 4
-
-MAX_HUNGER = 300
+from settings import settings
+import common.constant as const
 
 class SnakeGame():
     
@@ -30,11 +14,11 @@ class SnakeGame():
 
     def game_init(self, replay_mode = False, init_length = 3, init_direction = None, init_pos = None):
         # Reduce the time complexity taken to query neural network parameters 
-        self.snake_board = np.zeros((num_rows, num_cols), dtype = int)
-        self.foods_board = np.zeros((num_rows, num_cols), dtype = int)
+        self.snake_board = np.zeros((settings['NUM_ROWS'], settings['NUM_COLS']), dtype = int)
+        self.foods_board = np.zeros((settings['NUM_ROWS'], settings['NUM_COLS']), dtype = int)
         self.score = 0
         self.fitness = 1
-        self.moves_left = MAX_HUNGER
+        self.moves_left = settings['MAX_HUNGER']
         self.log = []
         self.end = False
         self.length = init_length
@@ -43,9 +27,9 @@ class SnakeGame():
         self.foods = []
         
         if not replay_mode:
-            init_pos = (num_rows // 2, num_cols // 2)
-            self.direction = random.choice(DIRECTIONS)
-            self.log.append((self.step, SPAWN, init_pos[0], init_pos[1], self.direction[0], self.direction[1]))
+            init_pos = (settings['NUM_ROWS'] // 2, settings['NUM_COLS'] // 2)
+            self.direction = random.choice(const.DIRECTIONS)
+            self.log.append((self.step, const.SPAWN, init_pos[0], init_pos[1], self.direction[0], self.direction[1]))
             self.positions.append(init_pos)
             self.snake_board[init_pos[0]][init_pos[1]] = 1
             
@@ -62,12 +46,12 @@ class SnakeGame():
         
     def random_foods(self):
         # Generate a random normal food
-        new_food = (np.random.randint(num_rows), np.random.randint(num_cols))
+        new_food = (np.random.randint(settings['NUM_ROWS']), np.random.randint(settings['NUM_COLS']))
         if new_food in self.positions:
             return self.random_foods()
         self.foods_board[new_food[0]][new_food[1]] = 1
         self.foods.append(new_food)
-        self.log.append((self.step, RAND_FOOD, new_food[0], new_food[1], 0, 0))
+        self.log.append((self.step, const.RAND_FOOD, new_food[0], new_food[1], 0, 0))
 
     def turn(self, direction):
         if self.length > 1 and (direction[0] * -1, direction[1] * -1) == self.direction:
@@ -94,11 +78,11 @@ class SnakeGame():
             pos_dr = 'None'
             pos_dc = 'None'
 
-            if (new[0] < 0 or new[0] >= num_rows) or \
-                (new[1] < 0 or new[1] >= num_cols) or \
+            if (new[0] < 0 or new[0] >= settings['NUM_ROWS']) or \
+                (new[1] < 0 or new[1] >= settings['NUM_COLS']) or \
                 len(self.positions) > 2 and new in self.positions[2:]:
                 # print('Dead')
-                move_type = END
+                move_type = const.END
                 pos_dr = 0
                 pos_dc = 0
                 
@@ -110,7 +94,7 @@ class SnakeGame():
                 self.length = self.length + 1
 
                 # Reset moves left
-                self.moves_left = MAX_HUNGER
+                self.moves_left = settings['MAX_HUNGER']
                 
                 # Set borad states
                 self.snake_board[new[0]][new[1]] = 1
@@ -120,7 +104,7 @@ class SnakeGame():
                 if not replay_mode:
                     self.random_foods()
                 
-                move_type = EAT
+                move_type = const.EAT
                 pos_dr = self.direction[0]
                 pos_dc = self.direction[1]
 
@@ -133,12 +117,12 @@ class SnakeGame():
                     removed = self.positions.pop()
                     self.snake_board[removed[0]][removed[1]] = 0
                 
-                move_type = MOVE
+                move_type = const.MOVE
                 pos_dr = self.direction[0]
                 pos_dc = self.direction[1]
 
             if self.moves_left <= 0:
-                move_type = END
+                move_type = const.END
 
             self.fitness = self.get_fitness()
             self.log.append((self.step, move_type, pos_r, pos_c, pos_dr, pos_dc))
@@ -150,9 +134,9 @@ class SnakeGame():
         head_r, head_c = self.get_head_pos()
 
         dtw_n = head_r
-        dtw_s = num_rows - 1 - head_r
+        dtw_s = settings['NUM_ROWS'] - 1 - head_r
         dtw_w = head_c
-        dtw_e = num_cols - 1 - head_c
+        dtw_e = settings['NUM_COLS'] - 1 - head_c
         dtw_ne = distance(dtw_n, dtw_e)
         dtw_se = distance(dtw_s, dtw_e)
         dtw_sw = distance(dtw_s, dtw_w)
@@ -246,8 +230,8 @@ def get_distance(board, r, c, dr, dc):
         c = c + dc
 
         # If nothing is found
-        if (r < 0 or r >= num_rows) or \
-            (c < 0 or c >= num_cols):
+        if (r < 0 or r >= settings['NUM_ROWS']) or \
+            (c < 0 or c >= settings['NUM_COLS']):
             count = 0
             break
         
