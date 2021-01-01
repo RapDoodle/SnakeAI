@@ -102,7 +102,7 @@ class SnakeGameGUI():
                 self.game.turn((row['pos_dr'], row['pos_dc']))
                 self.game.move(replay_mode = True)
                 pygame.time.wait(10)
-
+                
             elif row['type'] == RAND_FOOD:
                 self.game.set_food(row['pos_r'], row['pos_c'])
 

@@ -188,6 +188,7 @@ class SnakeGame():
         params[22] = get_distance(self.snake_board, head_r, head_c, 0, -1)
         params[23] = get_distance(self.snake_board, head_r, head_c, -1, -1)
 
+        # Use binary vision
         params = np.where(params > 0, 1, 0)
 
         return params
