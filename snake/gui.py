@@ -4,12 +4,12 @@ import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
 
-NUM_ROWS = 30
-NUM_COLS = 30
+NUM_ROWS = 15
+NUM_COLS = 15
 
 GRID_SIZE = 30
 GRID_MARGIN = 2
-BODY_MARGIN = 30
+BODY_MARGIN = 15
 BODY_BORDER_WIDTH = 2
 
 LEFT = (0, -1)
@@ -79,8 +79,21 @@ class SnakeGameGUI():
 
         log = pd.read_csv(replay_path)
 
+        row = log.iloc[0, :]
+        init_pos = (row['pos_r'], row['pos_c'])
+        init_dir = (row['pos_dr'], row['pos_dc'])
+        inverse_direction = (-1*init_dir[0], -1*init_dir[1])
+        new_r = init_pos[0]
+        new_c = init_pos[1]
+        self.game.positions.append((new_r, new_c))
+        self.game.game_init(replay_mode = True, init_length = 3, init_direction = init_dir, init_pos = init_pos)
+        for _ in range(3-1):
+            new_r = new_r + inverse_direction[0]
+            new_c = new_c + inverse_direction[1]
+            self.game.positions.append((new_r, new_c))
+        self.game.turn((row['pos_dr'], row['pos_dc']))
+        self.game.move(replay_mode = True)
         self.paint_board()
-        self.game.game_init(replay_mode = True)
 
         for _, row in log.iterrows():
             self.paint_board()
@@ -88,19 +101,17 @@ class SnakeGameGUI():
             if row['type'] == MOVE or row['type'] == EAT:
                 self.game.turn((row['pos_dr'], row['pos_dc']))
                 self.game.move(replay_mode = True)
-                pygame.time.wait(50)
+                pygame.time.wait(10)
 
             elif row['type'] == RAND_FOOD:
                 self.game.set_food(row['pos_r'], row['pos_c'])
 
             elif row['type'] == SPAWN:
-                self.game.positions.append((row['pos_r'], row['pos_c']))
-                self.game.turn((row['pos_dr'], row['pos_dc']))
-                self.game.move(replay_mode = True)
+                pass
 
             elif row['type'] == END:
                 self.game.end = True
-
+                break
             for pos in self.game.foods:
                 self.draw_block(pos[0], pos[1], RED)
                 
@@ -149,3 +160,6 @@ class SnakeGameGUI():
             pygame.display.update()
 
         pygame.quit()
+
+    def set_title(self, msg):
+        pygame.display.set_caption('Snake AI [' + msg + ']')

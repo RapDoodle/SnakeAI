@@ -16,8 +16,8 @@ class GAInput(Input):
 
 class GADense(Dense):
 
-    def __init__(self, units, activation, use_bias = True):
-        super().__init__(units, activation, use_bias)
+    def __init__(self, units, activation, use_bias = True, kernel_initializer = 'uniform'):
+        super().__init__(units, activation, use_bias, kernel_initializer)
         self.reward = 0
 
     def mutate(self, mutation_rate):

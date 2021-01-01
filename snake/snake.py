@@ -5,8 +5,8 @@ import math
 import os
 
 # Grid sizes
-num_rows = 30
-num_cols = 30
+num_rows = 15
+num_cols = 15
 
 # Directions
 LEFT = (0, -1)
@@ -21,28 +21,42 @@ EAT = 2
 SPAWN = 3
 END = 4
 
+MAX_HUNGER = 300
+
 class SnakeGame():
     
     def __init__(self):
         self.game_init()
 
-    def game_init(self, replay_mode = False):
+    def game_init(self, replay_mode = False, init_length = 3, init_direction = None, init_pos = None):
         # Reduce the time complexity taken to query neural network parameters 
         self.snake_board = np.zeros((num_rows, num_cols), dtype = int)
         self.foods_board = np.zeros((num_rows, num_cols), dtype = int)
-
+        self.score = 0
+        self.fitness = 1
+        self.moves_left = MAX_HUNGER
         self.log = []
         self.end = False
-        self.length = 1
+        self.length = init_length
         self.step = 0
         self.positions = []
         self.foods = []
+        
         if not replay_mode:
             init_pos = (num_rows // 2, num_cols // 2)
-            self.log.append((self.step, SPAWN, init_pos[0], init_pos[1], 0, 0))
+            self.direction = random.choice(DIRECTIONS)
+            self.log.append((self.step, SPAWN, init_pos[0], init_pos[1], self.direction[0], self.direction[1]))
             self.positions.append(init_pos)
             self.snake_board[init_pos[0]][init_pos[1]] = 1
-            self.direction = random.choice(DIRECTIONS)
+            
+            inverse_direction = (-1*self.direction[0], -1*self.direction[1])
+            new_r = init_pos[0]
+            new_c = init_pos[1]
+            for _ in range(init_length-1):
+                new_r = new_r + inverse_direction[0]
+                new_c = new_c + inverse_direction[1]
+                self.positions.append((new_r, new_c))
+
             self.move()
             self.random_foods()
         
@@ -55,17 +69,6 @@ class SnakeGame():
         self.foods.append(new_food)
         self.log.append((self.step, RAND_FOOD, new_food[0], new_food[1], 0, 0))
 
-    def set_food(self, r, c):
-        # Used for replay purposes
-        new_food = (r, c)
-        self.foods.append(new_food)
-        
-    def get_head_pos(self):
-        return self.positions[0]
-
-    def get_tail_pos(self):
-        return self.positions[-1]
-
     def turn(self, direction):
         if self.length > 1 and (direction[0] * -1, direction[1] * -1) == self.direction:
             # Raise invalid direction exception
@@ -75,6 +78,8 @@ class SnakeGame():
 
     def move(self, replay_mode = False):
         self.step = self.step + 1
+        self.moves_left = self.moves_left - 1
+
         if self.end == False:
             # Debug code
             # print(self.get_nn_params())
@@ -82,17 +87,30 @@ class SnakeGame():
             cur_pos = self.get_head_pos()
             d_row, d_col = self.direction
             new = ((cur_pos[0] + d_row), (cur_pos[1] + d_col))
+
+            move_type = 'None'
+            pos_r = cur_pos[0]
+            pos_c = cur_pos[0]
+            pos_dr = 'None'
+            pos_dc = 'None'
+
             if (new[0] < 0 or new[0] >= num_rows) or \
                 (new[1] < 0 or new[1] >= num_cols) or \
                 len(self.positions) > 2 and new in self.positions[2:]:
-                print('Dead')
-                self.log.append((self.step, END, new[0], new[1], 0, 0))
+                # print('Dead')
+                move_type = END
+                pos_dr = 0
+                pos_dc = 0
+                
                 self.end = True
             elif new in self.foods:
                 # Eat the new food
                 self.positions.insert(0, new)
                 self.foods.remove(new)
                 self.length = self.length + 1
+
+                # Reset moves left
+                self.moves_left = MAX_HUNGER
                 
                 # Set borad states
                 self.snake_board[new[0]][new[1]] = 1
@@ -101,16 +119,32 @@ class SnakeGame():
                 # New food
                 if not replay_mode:
                     self.random_foods()
+                
+                move_type = EAT
+                pos_dr = self.direction[0]
+                pos_dc = self.direction[1]
 
-                self.log.append((self.step, EAT, new[0], new[1], self.direction[0], self.direction[1]))
+                self.score = self.score + 1
+
             else:
                 self.positions.insert(0, new)
                 self.snake_board[new[0]][new[1]] = 1
                 if len(self.positions) > self.length:
                     removed = self.positions.pop()
                     self.snake_board[removed[0]][removed[1]] = 0
-                self.log.append((self.step, MOVE, new[0], new[1], self.direction[0], self.direction[1]))
-    
+                
+                move_type = MOVE
+                pos_dr = self.direction[0]
+                pos_dc = self.direction[1]
+
+            if self.moves_left <= 0:
+                move_type = END
+
+            self.fitness = self.get_fitness()
+            self.log.append((self.step, move_type, pos_r, pos_c, pos_dr, pos_dc))
+            
+            return move_type
+
     def get_nn_params(self):
         # Distance to the wall
         head_r, head_c = self.get_head_pos()
@@ -154,7 +188,36 @@ class SnakeGame():
         params[22] = get_distance(self.snake_board, head_r, head_c, 0, -1)
         params[23] = get_distance(self.snake_board, head_r, head_c, -1, -1)
 
+        params = np.where(params > 0, 1, 0)
+
         return params
+
+    def get_fitness(self):
+        # return 300 + 5 * self.score - self.moves_left
+        return self.score
+
+    def set_food(self, r, c):
+        # Used for replay purposes
+        new_food = (r, c)
+        self.foods.append(new_food)
+        
+    def get_head_pos(self):
+        return self.positions[0]
+
+    def get_tail_pos(self):
+        return self.positions[-1]
+
+    def up(self):
+        self.turn(UP)
+
+    def down(self):
+        self.turn(DOWN)
+
+    def left(self):
+        self.turn(LEFT)
+
+    def right(self):
+        self.turn(RIGHT) 
 
     def save(self, filename = 'default'):
         df = pd.DataFrame(self.log, columns = ['step', 'type', 'pos_r', 'pos_c', 'pos_dr', 'pos_dc'])

@@ -7,10 +7,12 @@ from nn.model import SequentialModel
 
 class GAModel():
 
-    def __init__(self, population):
+    def __init__(self, population, register = None):
         self.layers_blueprint = []
         self.forest = []
         self.population = population
+        # Can be used to store objects
+        self.register = register
 
     def add(self, layer):
         self.layers_blueprint.append(layer)
