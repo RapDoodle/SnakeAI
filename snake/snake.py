@@ -170,6 +170,8 @@ class SnakeGame():
                 move_type = const.END
 
             self.fitness = self.get_fitness()
+
+            # @LOG: Move
             self.log.append((self.step, move_type, pos_r, pos_c, pos_dr, pos_dc))
             
             return move_type

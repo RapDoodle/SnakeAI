@@ -1,6 +1,12 @@
 # Replay and statistics
 *.csv
 
+# Jupyter notebooks
+*.ipynb
+
+# Saved models
+*.obj
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

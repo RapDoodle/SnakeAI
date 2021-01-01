@@ -42,10 +42,10 @@ class GAModel():
         # Sort by reward in descending order
         self.sort_forest()
         
-        min_reward = self.forest[-1].reward
-        max_reward =  self.forest[0].reward
+        self.min_reward = self.forest[-1].reward
+        self.max_reward =  self.forest[0].reward
 
-        print('\nmin {}, max {}'.format(min_reward, max_reward))
+        print('\nmin {}, max {}'.format(self.min_reward, self.max_reward))
 
         # Abandon ones with low score
         keep_idx = int(self.population * keep_rate)
@@ -76,7 +76,7 @@ class GAModel():
 
         assert len(self.forest) == self.population
 
-        return (min_reward, max_reward)
+        return (self.min_reward, self.max_reward)
     
     def sort_forest(self):
         self.forest.sort(key = lambda model:model.reward, reverse = True)
