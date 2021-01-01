@@ -13,13 +13,19 @@ DIRECTIONS = [LEFT, RIGHT, UP, DOWN]
 
 # Snake Actions
 MOVE = 0
-RAND_FOOD = 1
+RAND_APPLE = 1
 EAT = 2
 SPAWN = 3
 END = 4
+RAND_BANANA = 5
 
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+
+# Food type
+APPLE = 0
+BANANA = 1

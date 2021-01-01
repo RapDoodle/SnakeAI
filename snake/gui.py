@@ -66,7 +66,7 @@ class SnakeGameGUI():
         new_r = init_pos[0]
         new_c = init_pos[1]
         self.game.positions.append((new_r, new_c))
-        self.game.game_init(replay_mode = True, init_length = 3, init_direction = init_dir, init_pos = init_pos)
+        self.game.game_init(replay_mode = True, init_len = 3)
         for _ in range(3-1):
             new_r = new_r + inverse_direction[0]
             new_c = new_c + inverse_direction[1]
@@ -83,8 +83,11 @@ class SnakeGameGUI():
                 self.game.move(replay_mode = True)
                 pygame.time.wait(10)
                 
-            elif row['type'] == const.RAND_FOOD:
-                self.game.set_food(row['pos_r'], row['pos_c'])
+            elif row['type'] == const.RAND_APPLE:
+                self.game.set_apple(row['pos_r'], row['pos_c'])
+
+            elif row['type'] == const.RAND_BANANA:
+                self.game.set_banana(row['pos_r'], row['pos_c'])
 
             elif row['type'] == const.SPAWN:
                 pass
@@ -92,8 +95,12 @@ class SnakeGameGUI():
             elif row['type'] == const.END:
                 self.game.end = True
                 break
-            for pos in self.game.foods:
+
+            for pos in self.game.apples:
                 self.draw_block(pos[0], pos[1], const.RED)
+
+            for pos in self.game.bananas:
+                self.draw_block(pos[0], pos[1], const.YELLOW)
                 
             for pos in self.game.positions:
                 self.draw_block(pos[0], pos[1], const.WHITE)
@@ -110,8 +117,10 @@ class SnakeGameGUI():
             clock.tick(10)
             pygame.event.pump()
             self.paint_board()
-            for pos in self.game.foods:
+            for pos in self.game.apples:
                 self.draw_block(pos[0], pos[1], const.RED)
+            for pos in self.game.bananas:
+                self.draw_block(pos[0], pos[1], const.YELLOW)
             for pos in self.game.positions:
                 self.draw_block(pos[0], pos[1], const.WHITE)
 
@@ -136,7 +145,7 @@ class SnakeGameGUI():
                             self.load()
 
             self.game.move()
-
+            self.set_title('Score: {}'.format(self.game.score))
             pygame.display.update()
 
         pygame.quit()
