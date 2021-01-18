@@ -10,6 +10,26 @@ For a video demo of the project, [click here (YouTube)](https://youtu.be/y_lS4VR
 - The general-purpose neural network built for the project will become an independent project on GitHub. For more information about the project LightNeuNet, click [here](https://github.com/RapDoodle/LightNeuNet).
 - I will continue to explore the process of parameter tuning to see if it could yield better results.
 
+## Usage
+### Install dependencies
+Make sure NumPy and PyGame is installed
+```bash
+pip install numpy
+pip install pygame
+```
+
+### Train the neural network
+```python snake_ai.py```
+
+### Play the game (user control)
+```python snake_ai.py```
+
+### Adjust the neural network
+Edit ```snake_ai.py```
+
+### Adjust more parameters
+Edit ```settings.py```
+
 ## Components in the Repository
 
 ### The Snake Game
